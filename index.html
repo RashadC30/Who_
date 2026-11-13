@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Country Guessing Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Country Guessing Game</h1>
+
+        <!-- Start Menu -->
+        <div id="menu-screen">
+            <input type="text" id="username" placeholder="Enter your username">
+            <button onclick="startGame()">Start Game</button>
+            <button onclick="loadScores()">See Scores</button>
+            <pre id="scores-display"></pre>
+        </div>
+
+        <!-- Gameplay Screen -->
+        <div id="game-screen" style="display: none;">
+            <p id="stats">Guesses left: 10 | Score: 0</p>
+            <h2 id="question">Question goes here</h2>
+            
+            <input type="text" id="guess-input" placeholder="Guess the country...">
+            <button onclick="submitGuess()">Submit Guess</button>
+            <button onclick="getHint()">Hint</button>
+            
+            <p id="feedback"></p>
+            <div id="hint-box"></div>
+        </div>
+    </div>
+
+    <script>
+        async function startGame() {
+            const username = document.getElementById("username").value || "Player";
+            const res = await fetch("/start", {
+                method: "POST",
+                body: JSON.stringify({ username })
+            });
+            const data = await res.json();
+            
+            document.getElementById("menu-screen").style.display = "none";
+            document.getElementById("game-screen").style.display = "block";
+            updateUI(data);
+        }
+
+        async function submitGuess() {
+            const guessInput = document.getElementById("guess-input");
+            const res = await fetch("/guess", {
+                method: "POST",
+                body: JSON.stringify({ guess: guessInput.value })
+            });
+            const data = await res.json();
+            
+            guessInput.value = "";
+            document.getElementById("hint-box").innerHTML = "";
+            document.getElementById("feedback").innerText = data.message;
+            updateUI(data);
+
+            if (data.game_over) {
+                document.getElementById("question").innerText = "Game Over! Final Score: " + data.score;
+            }
+        }
+
+        async function getHint() {
+            const res = await fetch("/hint", { method: "POST", body: "{}" });
+            const data = await res.json();
+            const h = data.hint;
+            document.getElementById("hint-box").innerHTML = `
+                <p><strong>Flag:</strong> ${h.flag} | <strong>Language:</strong> ${h.language}</p>
+                <p><strong>Dish:</strong> ${h.dish} | <strong>Region:</strong> ${h.region} | <strong>Capital:</strong> ${h.capital}</p>
+            `;
+        }
+
+        async function loadScores() {
+            const res = await fetch("/scores");
+            document.getElementById("scores-display").innerText = await res.text();
+        }
+
+        function updateUI(data) {
+            document.getElementById("stats").innerText = `Guesses left: ${data.guesses} | Countries left: ${data.remaining} | Score: ${data.score}`;
+            if (data.question) {
+                document.getElementById("question").innerText = data.question;
+            }
+        }
+    </script>
+</body>
+</html>
