@@ -1,0 +1,4 @@
+name = "country_who"
+main = "server.py"
+compatibility_date = "2026-11-20"
+compatibility_flags = ["python_workers"]
